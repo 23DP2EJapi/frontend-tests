@@ -4,8 +4,13 @@ const normalizeApiUrl = (rawUrl?: string) => {
   const withProtocol = /^https?:\/\//i.test(trimmedUrl)
     ? trimmedUrl
     : `https://${trimmedUrl}`;
+  const parsed = new URL(withProtocol);
+  const normalizedPath = parsed.pathname.replace(/\/+$/, '');
+  const pathWithApi = normalizedPath === '' || normalizedPath === '/'
+    ? '/api'
+    : normalizedPath;
 
-  return withProtocol.replace(/\/+$/, '');
+  return `${parsed.origin}${pathWithApi}`;
 };
 
 const API_URL = normalizeApiUrl(import.meta.env.VITE_API_URL);
