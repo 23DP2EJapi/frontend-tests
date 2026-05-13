@@ -5,14 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useUpdateProfileName } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Calendar, Loader2, Pencil, Clock } from "lucide-react";
+import { User, Mail, Calendar, Loader2, Pencil, Clock, Trash2 } from "lucide-react";
 import { containsProfanity, profanityMessage } from "@/lib/profanityFilter";
 
 const Profile = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: profile, isLoading: profileLoading } = useProfile(user?.id);
@@ -42,6 +46,19 @@ const Profile = () => {
     const nextAllowed = new Date(lastChange);
     nextAllowed.setDate(nextAllowed.getDate() + 14);
     return Math.max(0, Math.ceil((nextAllowed.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+  };
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteAccount();
+      navigate("/");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Kļūda", description: error.message });
+      setIsDeleting(false);
+    }
   };
 
   const handleSaveName = async () => {
@@ -156,6 +173,50 @@ const Profile = () => {
                       })
                     : "Nav zināms"}
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-destructive/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="h-5 w-5" />
+                Bīstamā zona
+              </CardTitle>
+              <CardDescription>Šīs darbības ir neatgriezeniskas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Dzēst kontu</p>
+                  <p className="text-sm text-muted-foreground">Neatgriezeniski dzēš jūsu kontu un visus datus</p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Dzēst kontu
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Vai tiešām dzēst kontu?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Šī darbība ir neatgriezeniska. Jūsu konts un visi ar to saistītie dati tiks neatgriezeniski dzēsti.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Atcelt</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteAccount}
+                        disabled={isDeleting}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                        Dzēst kontu
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>
