@@ -52,7 +52,6 @@ const Footer = () => {
                 { href: "/listings", label: "Sludinājumi" },
                 { href: "/about", label: "Par mums" },
                 { href: "/how-it-works", label: "Kā tas strādā" },
-                { href: "/faq", label: "Biežāk uzdotie jautājumi" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link 
@@ -72,8 +71,6 @@ const Footer = () => {
             <ul className="space-y-3">
               {[
                 { href: "/post-listing", label: "Publicēt sludinājumu" },
-                { href: "/resources", label: "Resursi" },
-                { href: "/success-stories", label: "Veiksmes stāsti" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link 
@@ -125,12 +122,7 @@ const Footer = () => {
             © {currentYear} Brīvprātīgie.lv. Visas tiesības aizsargātas.
           </p>
           <div className="flex gap-6">
-            <Link to="/privacy" className="text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">
-              Privātuma politika
-            </Link>
-            <Link to="/terms" className="text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">
-              Lietošanas noteikumi
-            </Link>
+            
           </div>
         </div>
       </div>
