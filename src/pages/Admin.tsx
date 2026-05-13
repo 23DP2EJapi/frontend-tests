@@ -214,7 +214,7 @@ const Admin = () => {
                           key={profile.id}
                           profile={profile}
                           onUpdate={(data) => updateProfile.mutate({ id: profile.id, ...data })}
-                          onDelete={() => handleDeleteProfile(profile.id)}
+                          onDelete={() => handleDeleteProfile(profile.user_id)}
                           isDeleting={deleteProfile.isPending}
                         />
                       ))}

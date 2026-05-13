@@ -109,8 +109,8 @@ export const useUpdateProfile = () => {
 export const useDeleteProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (profileId: string) => {
-      await api.delete(`/profiles/${profileId}`);
+    mutationFn: async (userId: string) => {
+      await api.delete(`/admin/users/${userId}`);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-profiles"] }); },
   });
