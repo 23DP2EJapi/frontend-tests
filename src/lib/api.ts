@@ -30,13 +30,23 @@ const createHeaders = (isJson = false) => {
 };
 
 const parseError = async (res: Response) => {
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    return await res.json();
-  }
-
   const text = await res.text();
-  return { message: text || `Request failed with status ${res.status}` };
+  if (!text) return { message: `Request failed with status ${res.status}` };
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
+
+const parseSuccess = async (res: Response) => {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 };
 
 export const api = {
@@ -45,7 +55,7 @@ export const api = {
       headers: createHeaders(),
     });
     if (!res.ok) throw await parseError(res);
-    return res.json();
+    return parseSuccess(res);
   },
   async post(path: string, body: any) {
     const res = await fetch(buildApiUrl(path), {
@@ -54,7 +64,7 @@ export const api = {
       body: JSON.stringify(body),
     });
     if (!res.ok) throw await parseError(res);
-    return res.json();
+    return parseSuccess(res);
   },
   async patch(path: string, body: any) {
     const res = await fetch(buildApiUrl(path), {
@@ -63,7 +73,7 @@ export const api = {
       body: JSON.stringify(body),
     });
     if (!res.ok) throw await parseError(res);
-    return res.json();
+    return parseSuccess(res);
   },
   async delete(path: string) {
     const res = await fetch(buildApiUrl(path), {
@@ -71,7 +81,7 @@ export const api = {
       headers: createHeaders(),
     });
     if (!res.ok) throw await parseError(res);
-    return res.json();
+    return parseSuccess(res);
   },
   async getWithBody(path: string) {
     const res = await fetch(buildApiUrl(path), {
@@ -79,6 +89,6 @@ export const api = {
       headers: createHeaders(true),
     });
     if (!res.ok) throw await parseError(res);
-    return res.json();
+    return parseSuccess(res);
   },
 };
