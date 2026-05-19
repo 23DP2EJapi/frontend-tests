@@ -1,20 +1,202 @@
 import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyListings, useListingApplications, useUpdateApplicationStatus, useMarkListingCompleted } from "@/hooks/useListingApplications";
+import { useMyListings, useListingApplications, useUpdateApplicationStatus, useMarkListingCompleted, useUpdateListing } from "@/hooks/useListingApplications";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, MapPin, Clock, Users, Mail, Phone, FileText, Check, X, Eye, CheckCircle, Star } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, MapPin, Clock, Users, Mail, Phone, FileText, Check, X, Eye, CheckCircle, Star, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { lv } from "date-fns/locale";
 import { MessageButton } from "@/components/messages/MessageButton";
 import ReviewForm from "@/components/reviews/ReviewForm";
 
-const ApplicationCard = ({ 
+const editListingSchema = z.object({
+  title: z.string().min(5, "Nosaukumam jābūt vismaz 5 rakstzīmēm"),
+  description: z.string().min(20, "Aprakstam jābūt vismaz 20 rakstzīmēm"),
+  location: z.string().min(2, "Norādi atrašanās vietu"),
+  category: z.string().min(1, "Izvēlies kategoriju"),
+  timeCommitment: z.string().optional(),
+  spots: z.coerce.number().min(1, "Jābūt vismaz 1 vietai").default(1),
+  requirements: z.string().optional(),
+  benefits: z.string().optional(),
+  isUrgent: z.boolean().default(false),
+  isOnline: z.boolean().default(false),
+});
+
+type EditListingFormData = z.infer<typeof editListingSchema>;
+
+const CATEGORIES = ["Sociālā palīdzība", "Izglītība", "Vide", "Kultūra", "Sports", "Veselība", "Dzīvnieki", "Cits"];
+const CITIES = ["Rīga", "Daugavpils", "Liepāja", "Jelgava", "Jūrmala", "Ventspils", "Rēzekne", "Valmiera", "Cita"];
+
+const EditListingDialog = ({ listing }: { listing: any }) => {
+  const [open, setOpen] = useState(false);
+  const updateListing = useUpdateListing();
+
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<EditListingFormData>({
+    resolver: zodResolver(editListingSchema),
+    defaultValues: {
+      title: listing.title,
+      description: listing.description,
+      location: listing.location,
+      category: listing.category,
+      timeCommitment: listing.time_commitment || "",
+      spots: listing.spots || 1,
+      requirements: listing.requirements || "",
+      benefits: listing.benefits || "",
+      isUrgent: listing.is_urgent || false,
+      isOnline: listing.is_online || false,
+    },
+  });
+
+  const isUrgent = watch("isUrgent");
+  const isOnline = watch("isOnline");
+
+  const onSubmit = (data: EditListingFormData) => {
+    updateListing.mutate(
+      {
+        listingId: listing.id,
+        data: {
+          title: data.title,
+          description: data.description,
+          location: data.location,
+          category: data.category,
+          time_commitment: data.timeCommitment || null,
+          spots: data.spots,
+          requirements: data.requirements || null,
+          benefits: data.benefits || null,
+          is_urgent: data.isUrgent,
+          is_online: data.isOnline,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Sludinājums veiksmīgi atjaunināts!");
+          setOpen(false);
+        },
+        onError: () => toast.error("Kļūda atjauninot sludinājumu"),
+      }
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Pencil className="h-4 w-4 mr-1" />
+          Rediģēt
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Rediģēt sludinājumu</DialogTitle>
+          <DialogDescription>Mainīt sludinājuma informāciju</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">Nosaukums *</Label>
+            <Input id="edit-title" {...register("title")} />
+            {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-description">Apraksts *</Label>
+            <Textarea id="edit-description" rows={4} {...register("description")} />
+            {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Kategorija *</Label>
+              <Select defaultValue={listing.category} onValueChange={(v) => setValue("category", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label>Atrašanās vieta *</Label>
+              <Select defaultValue={listing.location} onValueChange={(v) => setValue("location", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CITIES.map((city) => <SelectItem key={city} value={city}>{city}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {errors.location && <p className="text-sm text-destructive">{errors.location.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-timeCommitment">Laika ieguldījums</Label>
+              <Input id="edit-timeCommitment" placeholder="Piemēram: 4-6 stundas nedēļā" {...register("timeCommitment")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-spots">Brīvo vietu skaits *</Label>
+              <Input id="edit-spots" type="number" min={1} {...register("spots")} />
+              {errors.spots && <p className="text-sm text-destructive">{errors.spots.message}</p>}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-requirements">Prasības</Label>
+            <Textarea id="edit-requirements" rows={3} placeholder="Kādas prasības ir brīvprātīgajam?" {...register("requirements")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-benefits">Ieguvumi</Label>
+            <Textarea id="edit-benefits" rows={3} placeholder="Ko brīvprātīgais iegūs?" {...register("benefits")} />
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Steidzams</Label>
+                <p className="text-sm text-muted-foreground">Atzīmē, ja vajadzīgi brīvprātīgie steidzami</p>
+              </div>
+              <Switch checked={isUrgent} onCheckedChange={(v) => setValue("isUrgent", v)} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Attālināti</Label>
+                <p className="text-sm text-muted-foreground">Darbs var tikt veikts attālināti</p>
+              </div>
+              <Switch checked={isOnline} onCheckedChange={(v) => setValue("isOnline", v)} />
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end pt-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Atcelt
+            </Button>
+            <Button type="submit" disabled={updateListing.isPending}>
+              {updateListing.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saglabā...</>
+              ) : (
+                "Saglabāt"
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ApplicationCard = ({
   application, 
   listingTitle,
   onApprove, 
@@ -188,7 +370,6 @@ const ListingWithApplications = ({ listing }: { listing: any }) => {
   };
 
   const pendingCount = applications?.filter(a => a.status === "pending").length || 0;
-  const approvedApplications = applications?.filter(a => a.status === "approved") || [];
 
   return (
     <Card>
@@ -220,6 +401,7 @@ const ListingWithApplications = ({ listing }: { listing: any }) => {
                 <Badge variant={listing.is_active ? "default" : "outline"}>
                   {listing.is_active ? "Aktīvs" : "Neaktīvs"}
                 </Badge>
+                <EditListingDialog listing={listing} />
                 <Button
                   size="sm"
                   variant="outline"
@@ -337,7 +519,7 @@ const MyListings = () => {
             </div>
           ) : listings && listings.length > 0 ? (
             <div className="space-y-6">
-              {listings.map((listing) => (
+              {listings.map((listing: any) => (
                 <ListingWithApplications key={listing.id} listing={listing} />
               ))}
             </div>

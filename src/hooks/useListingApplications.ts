@@ -45,6 +45,19 @@ export const useMarkListingCompleted = () => {
   });
 };
 
+export const useUpdateListing = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ listingId, data }: { listingId: string; data: Record<string, unknown> }) => {
+      await api.patch(`/listings/${listingId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-listings"] });
+    },
+  });
+};
+
 export const useMyListings = (userId: string | undefined) => {
   return useQuery({
     queryKey: ["my-listings", userId],
