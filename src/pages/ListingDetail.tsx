@@ -11,12 +11,10 @@ import {
   MapPin,
   Clock,
   Users,
-  Building2,
   Calendar,
   ArrowLeft,
   Share2,
   Bookmark,
-  Star,
   CheckCircle2,
   Heart,
   User,
@@ -24,10 +22,8 @@ import {
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useListing } from "@/hooks/useListings";
-import { useListingReviews, useListingStats } from "@/hooks/useReviews";
 import { useSubmitApplication } from "@/hooks/useApplications";
 import { useAuth } from "@/contexts/AuthContext";
-import ReviewForm from "@/components/reviews/ReviewForm";
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -41,8 +37,6 @@ const ListingDetail = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const { data: listing, isLoading: isLoadingListing, error: listingError } = useListing(id || "");
-  const { data: reviews } = useListingReviews(listing?.id || "");
-  const { data: stats } = useListingStats(listing?.id || "");
   const submitApplication = useSubmitApplication();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -176,13 +170,6 @@ const ListingDetail = () => {
                     <MapPin className="h-5 w-5 shrink-0" />
                     <span>{listing.location}</span>
                   </div>
-                  {stats && stats.reviewCount > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <Star className="h-5 w-5 text-warning fill-warning" />
-                      <span className="font-medium text-foreground">{stats.averageRating}</span>
-                      <span className="text-muted-foreground">({stats.reviewCount} atsauksmes)</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Quick Actions */}
@@ -247,77 +234,6 @@ const ListingDetail = () => {
                 </ul>
               </motion.div>
 
-              {/* Reviews */}
-              {reviews && reviews.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                  className="bg-card rounded-xl border border-border p-6"
-                >
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-foreground">Atsauksmes</h2>
-                    {stats && (
-                      <div className="flex items-center gap-2">
-                        <Star className="h-5 w-5 text-warning fill-warning" />
-                        <span className="font-semibold text-foreground">{stats.averageRating}</span>
-                        <span className="text-muted-foreground">({stats.reviewCount})</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-6">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="border-b border-border last:border-0 pb-6 last:pb-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                              A
-                            </div>
-                            <div>
-                              <div className="font-medium text-foreground">
-                                Anonīms
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {new Date(review.created_at).toLocaleDateString("lv-LV")}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${
-                                  i < review.rating ? "text-warning fill-warning" : "text-muted"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        {review.comment && (
-                          <p className="text-muted-foreground text-sm">{review.comment}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Review Form */}
-              {user && listing && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className="bg-card rounded-xl border border-border p-6"
-                >
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Atstāt atsauksmi</h2>
-                  <ReviewForm
-                    listingId={listing.id}
-                    reviewType="listing"
-                  />
-                </motion.div>
-              )}
             </div>
 
             {/* Sidebar */}
