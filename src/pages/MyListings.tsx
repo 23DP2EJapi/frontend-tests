@@ -55,8 +55,8 @@ const EditListingDialog = ({ listing }: { listing: any }) => {
       spots: listing.spots || 1,
       requirements: listing.requirements || "",
       benefits: listing.benefits || "",
-      isUrgent: listing.is_urgent || false,
-      isOnline: listing.is_online || false,
+      isUrgent: !!listing.is_urgent,
+      isOnline: !!listing.is_online,
     },
   });
 
